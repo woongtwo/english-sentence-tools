@@ -1,0 +1,1430 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>문장 도구</title>
+  <style>
+    :root {
+      --bg: #f3f3f3;
+      --panel: #ffffff;
+      --line: #dadada;
+      --head: #3c3d47;
+      --text: #1c1c1c;
+      --muted: #9aa0a6;
+      --btn: #0a0a0a;
+      --btnText: #ffffff;
+      --btnSoft: #ffffff;
+      --shadow: 0 7px 18px rgba(0,0,0,.16);
+      --menu: #4b4b52;
+      --menuBorder: #64646c;
+      --chip: #efefef;
+      --chipOn: #23242a;
+      --chipOnText: #ffffff;
+    }
+
+    body.dark {
+      --bg: #1a1b20;
+      --panel: #202127;
+      --line: #363844;
+      --head: #2d2f38;
+      --text: #f2f2f2;
+      --muted: #9ea4ae;
+      --btn: #ffffff;
+      --btnText: #111111;
+      --btnSoft: #202127;
+      --shadow: 0 10px 24px rgba(0,0,0,.36);
+      --menu: #30323a;
+      --menuBorder: #454852;
+      --chip: #2b2d35;
+      --chipOn: #f1f1f1;
+      --chipOnText: #111111;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", Arial, sans-serif;
+    }
+
+    .page {
+      min-height: 100%;
+      padding: 14px 14px 18px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+
+    .title {
+      margin: 0;
+      font-size: 31px;
+      font-weight: 800;
+      letter-spacing: -0.035em;
+    }
+
+    .toolbar {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .icon-btn {
+      width: 34px;
+      height: 34px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--text);
+      cursor: pointer;
+      transition: background .15s ease, border-color .15s ease;
+    }
+
+    .icon-btn:hover,
+    .icon-btn.active {
+      background: rgba(0,0,0,.04);
+      border-color: var(--line);
+    }
+
+    body.dark .icon-btn:hover,
+    body.dark .icon-btn.active {
+      background: rgba(255,255,255,.06);
+    }
+
+    .popover {
+      position: absolute;
+      top: 42px;
+      right: 0;
+      min-width: 220px;
+      background: var(--menu);
+      color: #fff;
+      border: 1px solid var(--menuBorder);
+      box-shadow: var(--shadow);
+      z-index: 30;
+      display: none;
+    }
+
+    .popover.open { display: block; }
+
+    .popover-title {
+      padding: 8px 14px 4px;
+      font-size: 12px;
+      color: #bfc3cb;
+    }
+
+    .menu-item {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 12px 14px;
+      border: 0;
+      background: transparent;
+      color: #fff;
+      cursor: pointer;
+      font-size: 18px;
+      font-weight: 700;
+      text-align: left;
+    }
+
+    .menu-item + .menu-item {
+      border-top: 1px solid rgba(255,255,255,.08);
+    }
+
+    .menu-item:hover {
+      background: rgba(255,255,255,.06);
+    }
+
+    .app {
+      height: calc(100vh - 84px);
+      min-height: 720px;
+    }
+
+    .scramble-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 270px minmax(0, 1fr);
+      gap: 20px;
+      align-items: stretch;
+      height: 100%;
+      min-height: 0;
+    }
+
+    .gap-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      grid-template-rows: minmax(0, 1fr) minmax(0, .9fr);
+      gap: 14px;
+      align-items: stretch;
+      height: 100%;
+      min-height: 0;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      min-height: 0;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .panel-head {
+      min-height: 36px;
+      background: var(--head);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 10px 0 12px;
+      font-size: 13px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .panel-head.plain {
+      background: transparent;
+      color: var(--text);
+      border-bottom: 1px solid var(--line);
+      min-height: 32px;
+      font-weight: 500;
+    }
+
+    .panel-title {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .head-tools {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: inherit;
+    }
+
+    .head-tools button,
+    .head-tools label {
+      border: 0;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      padding: 0;
+      font: inherit;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .panel-body {
+      flex: 1;
+      min-height: 0;
+      padding: 16px 16px;
+      color: var(--muted);
+      font-size: 10pt;
+      line-height: 1.9;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+      tab-size: 2;
+    }
+
+    .panel-body.compact,
+    textarea.editor.compact {
+      line-height: 1.65;
+    }
+
+    .panel-body.ui-body {
+      white-space: normal;
+      line-height: 1.45;
+      padding-top: 12px;
+    }
+
+    .gap-config {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    .mini-label {
+      font-size: 13px;
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .mini-input {
+      width: 56px;
+      height: 34px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--text);
+      font-size: 14px;
+      padding: 0 8px;
+      outline: none;
+    }
+
+    .mini-btn {
+      height: 34px;
+      border: 1px solid var(--line);
+      background: var(--btnSoft);
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 700;
+      padding: 0 12px;
+      cursor: pointer;
+    }
+
+    .line-picks {
+      margin: 0;
+      padding-left: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 10pt;
+      line-height: 1.5;
+      color: var(--text);
+    }
+
+    .line-picks li {
+      margin: 0;
+    }
+
+    .gap-helper {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      height: 100%;
+    }
+
+    .helper-note {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .helper-list {
+      margin: 0;
+      padding-left: 18px;
+      font-size: 10pt;
+      line-height: 1.65;
+      color: var(--text);
+      white-space: pre-wrap;
+    }
+
+    .helper-list li + li {
+      margin-top: 6px;
+    }
+
+    .status-chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 26px;
+      padding: 0 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--chip);
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .inline-preview {
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+      font-size: 10pt;
+      line-height: 1.9;
+      color: var(--text);
+    }
+
+    .word-toggle {
+      display: inline-block;
+      padding: 1px 5px;
+      border-radius: 6px;
+      color: var(--text);
+      cursor: pointer;
+      transition: background .12s ease, box-shadow .12s ease;
+    }
+
+    .word-toggle:hover {
+      background: rgba(82, 133, 255, .10);
+    }
+
+    .word-toggle.picked {
+      background: rgba(82, 133, 255, .18);
+    }
+
+    body.dark .word-toggle:hover {
+      background: rgba(123, 165, 255, .14);
+    }
+
+    body.dark .word-toggle.picked {
+      background: rgba(123, 165, 255, .22);
+    }
+
+    .answer-word {
+      display: inline-block;
+      text-decoration: underline;
+      text-decoration-thickness: 1.5px;
+      text-underline-offset: 2px;
+      text-decoration-skip-ink: none;
+    }
+
+    textarea.editor {
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      resize: none;
+      border: 0;
+      outline: none;
+      background: transparent;
+      color: var(--text);
+      font: inherit;
+      font-size: 10pt;
+      line-height: 1.9;
+      padding: 16px 16px;
+      overflow: auto;
+    }
+
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      align-self: start;
+      padding-top: 108px;
+      min-height: 0;
+    }
+
+    .checks {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      font-size: 13px;
+    }
+
+    .checks label,
+    .inline-check {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      margin: 0;
+      accent-color: #70737c;
+      cursor: pointer;
+    }
+
+    .action-btn {
+      width: 100%;
+      min-height: 58px;
+      border: 1px solid var(--line);
+      background: var(--btnSoft);
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .action-btn.primary {
+      background: var(--btn);
+      color: var(--btnText);
+      border-color: var(--btn);
+    }
+
+    .action-btn:hover { filter: brightness(.98); }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-content: flex-start;
+    }
+
+    .chip {
+      border: 1px solid var(--line);
+      background: var(--chip);
+      color: var(--text);
+      padding: 8px 11px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 13px;
+      line-height: 1;
+      user-select: none;
+    }
+
+    .chip.active {
+      background: var(--chipOn);
+      color: var(--chipOnText);
+      border-color: var(--chipOn);
+    }
+
+    .answers-hidden {
+      color: var(--muted);
+    }
+
+    .small {
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .settings-pop {
+      position: absolute;
+      top: 32px;
+      right: 36px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      color: var(--text);
+      box-shadow: var(--shadow);
+      padding: 12px;
+      min-width: 210px;
+      display: none;
+      z-index: 12;
+    }
+
+    .settings-pop.open { display: block; }
+
+    .settings-wrap {
+      position: relative;
+    }
+
+    .setting-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      font-size: 14px;
+      padding: 6px 0;
+    }
+
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+    svg {
+      width: 18px;
+      height: 18px;
+      display: block;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    @media (max-width: 1220px) {
+      .app {
+        height: auto;
+        min-height: 0;
+      }
+      .scramble-layout {
+        grid-template-columns: 1fr;
+        height: auto;
+      }
+      .controls {
+        padding-top: 0;
+        max-width: 360px;
+      }
+      .gap-layout {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto;
+        height: auto;
+      }
+      .panel { min-height: 240px; height: auto; }
+    }
+
+    @media (max-width: 700px) {
+      .page { padding: 12px; }
+      .title { font-size: 24px; }
+      .panel-body, textarea.editor { font-size: 10pt; line-height: 1.8; }
+      .action-btn { min-height: 52px; font-size: 14px; }
+      .menu-item { font-size: 16px; }
+      .popover { min-width: 190px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="topbar">
+      <h1 class="title" id="pageTitle">문장 스크램블</h1>
+      <div class="toolbar">
+        <button class="icon-btn" id="themeBtn" title="테마 전환">
+          <svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path></svg>
+        </button>
+        <button class="icon-btn" id="moreBtn" title="도구">
+          <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.5"></circle><circle cx="12" cy="12" r="1.5"></circle><circle cx="19" cy="12" r="1.5"></circle></svg>
+        </button>
+
+        <div class="popover" id="moreMenu">
+          <div class="popover-title">도구</div>
+          <button class="menu-item" data-mode="gap">
+            <span>지문 빈칸 뚫기</span>
+            <svg viewBox="0 0 24 24"><path d="M4 4l16 16"></path><path d="M16 4h4v4"></path><path d="M20 16v4h-4"></path><path d="M15 9l5-5"></path><path d="M9 15l-5 5"></path></svg>
+          </button>
+          <button class="menu-item" data-mode="scramble">
+            <span>문장 스크램블</span>
+            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"></rect><rect x="2" y="2" width="13" height="13" rx="2"></rect></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="app" id="app"></div>
+  </div>
+
+  <script>
+    const state = {
+      mode: 'scramble',
+      dark: false,
+      scramble: {
+        input: '',
+        output: '',
+        lowercase: true,
+        removePeriod: true,
+      },
+      gap: {
+        input: '',
+        selectedWords: [],
+        lineBlanks: [],
+        firstLetterHint: false,
+        showAnswers: false,
+        keepOriginalBlankLength: true,
+        totalBlanks: 4,
+      }
+    };
+
+    const exampleSentence = 'May everyone always be healthy and happy.';
+    const examplePassage = 'May everyone always be healthy and happy. We hope every learner can read clearly, think deeply, and speak kindly.';
+
+    const app = document.getElementById('app');
+    const pageTitle = document.getElementById('pageTitle');
+    const themeBtn = document.getElementById('themeBtn');
+    const moreBtn = document.getElementById('moreBtn');
+    const moreMenu = document.getElementById('moreMenu');
+
+    function iconCopy() {
+      return '<svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"></rect><rect x="2" y="2" width="13" height="13" rx="2"></rect></svg>';
+    }
+    function iconClose() {
+      return '<svg viewBox="0 0 24 24"><path d="M18 6L6 18"></path><path d="M6 6l12 12"></path></svg>';
+    }
+    function iconGear() {
+      return '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.08V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-.4-1.08 1.7 1.7 0 0 0-1-.6 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.08-.4H2.8a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.08-.4 1.7 1.7 0 0 0 .6-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.08V2.8a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 .4 1.08 1.7 1.7 0 0 0 1 .6 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9c.35.3.56.7.6 1.15V10.3a2 2 0 1 1 0 4h-.1c-.38 0-.75.14-1.02.4-.3.28-.5.64-.58 1.02z"></path></svg>';
+    }
+
+    function escapeHtml(text) {
+      return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+
+    function wrapCopyHtmlSegment(text, underline = false) {
+      if (!text) return '';
+      const preserved = escapeHtml(text)
+        .replace(/ /g, '&nbsp;')
+        .replace(/	/g, '&nbsp;&nbsp;&nbsp;&nbsp;');
+      if (underline) {
+        return `<span style="text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; text-decoration-skip-ink: none;">${preserved}</span>`;
+      }
+      return preserved;
+    }
+
+    function parseUrl() {
+      const params = new URLSearchParams(location.search);
+      const mode = params.get('mode');
+      if (mode === 'gap' || mode === 'scramble') state.mode = mode;
+      state.dark = params.get('theme') === 'dark';
+      state.scramble.input = params.get('s_text') || state.scramble.input;
+      state.scramble.output = params.get('s_out') || state.scramble.output;
+      state.scramble.lowercase = params.get('s_lower') !== '0';
+      state.scramble.removePeriod = params.get('s_dot') !== '0';
+      state.gap.input = params.get('g_text') || state.gap.input;
+      state.gap.firstLetterHint = params.get('g_hint') === '1';
+      state.gap.showAnswers = params.get('g_show') === '1';
+      state.gap.keepOriginalBlankLength = params.get('g_len') !== '0';
+      const gapCountParam = params.get('g_count');
+      state.gap.totalBlanks = sanitizeGapTotalBlanks(gapCountParam === null ? 4 : gapCountParam, 50, 4);
+
+      const rawSelections = (params.get('g_pos') || '').split('|').filter(Boolean);
+      if (rawSelections.length) {
+        const grouped = new Map();
+        rawSelections.forEach((item) => {
+          const [lineIndexText, positionText] = item.split(':');
+          const lineIndex = Number(lineIndexText);
+          const position = Number(positionText);
+          if (!Number.isInteger(lineIndex) || !Number.isInteger(position)) return;
+          if (!grouped.has(lineIndex)) grouped.set(lineIndex, []);
+          grouped.get(lineIndex).push({ position, word: '' });
+        });
+        state.gap.lineBlanks = Array.from(grouped.entries())
+          .sort((a, b) => a[0] - b[0])
+          .map(([lineIndex, picks]) => ({ lineIndex, picks: picks.sort((a, b) => a.position - b.position) }));
+      }
+    }
+
+    function buildShareUrl() {
+      const url = new URL(location.href);
+      url.search = '';
+      url.hash = '';
+      const p = new URLSearchParams();
+      p.set('mode', state.mode);
+      if (state.dark) p.set('theme', 'dark');
+      p.set('s_text', state.scramble.input);
+      p.set('s_out', state.scramble.output);
+      if (!state.scramble.lowercase) p.set('s_lower', '0');
+      if (!state.scramble.removePeriod) p.set('s_dot', '0');
+      p.set('g_text', state.gap.input);
+      if (state.gap.firstLetterHint) p.set('g_hint', '1');
+      if (state.gap.showAnswers) p.set('g_show', '1');
+      if (!state.gap.keepOriginalBlankLength) p.set('g_len', '0');
+      if (state.gap.totalBlanks !== 4) p.set('g_count', String(state.gap.totalBlanks));
+      const serializedSelections = state.gap.lineBlanks.flatMap((item) =>
+        (item.picks || []).map((entry) => `${item.lineIndex}:${entry.position}`)
+      );
+      if (serializedSelections.length) p.set('g_pos', serializedSelections.join('|'));
+      url.search = p.toString();
+      return url.toString();
+    }
+
+    function closeMenus() {
+      moreMenu.classList.remove('open');
+      moreBtn.classList.remove('active');
+    }
+
+    function updateTheme() {
+      document.body.classList.toggle('dark', state.dark);
+    }
+
+    function tokenizeWords(text) {
+      const matches = text.match(/[A-Za-zÀ-ÿ0-9]+(?:['’-][A-Za-zÀ-ÿ0-9]+)*|[가-힣]+/g);
+      return matches || [];
+    }
+
+    function normalizeWord(word) {
+      return word.toLowerCase();
+    }
+
+    function getLineWordEntries(line) {
+      const regex = /[A-Za-zÀ-ÿ0-9]+(?:['’-][A-Za-zÀ-ÿ0-9]+)*|[가-힣]+/g;
+      return Array.from(line.matchAll(regex)).map((match, position) => ({
+        word: match[0],
+        position
+      }));
+    }
+
+    function getAllGapEntries(text) {
+      return text.replace(/\r?\n/g, '\n').split('\n').flatMap((line, lineIndex) => {
+        return getLineWordEntries(line).map((entry) => ({
+          lineIndex,
+          position: entry.position,
+          word: entry.word
+        }));
+      });
+    }
+
+    function groupGapSelections(selections) {
+      const grouped = new Map();
+      selections.forEach((entry) => {
+        if (!grouped.has(entry.lineIndex)) grouped.set(entry.lineIndex, []);
+        grouped.get(entry.lineIndex).push({ position: entry.position, word: entry.word });
+      });
+      return Array.from(grouped.entries())
+        .sort((a, b) => a[0] - b[0])
+        .map(([lineIndex, picks]) => ({
+          lineIndex,
+          picks: picks.sort((a, b) => a.position - b.position)
+        }));
+    }
+
+    function flattenGapSelections(lineBlanks) {
+      return lineBlanks.flatMap((item) =>
+        (item.picks || []).map((entry) => ({
+          lineIndex: item.lineIndex,
+          position: entry.position,
+          word: entry.word
+        }))
+      );
+    }
+
+    function sanitizeGapTotalBlanks(value, maxCount = 50, fallback = 0) {
+      const numeric = Number(value);
+      if (!Number.isFinite(numeric)) return Math.max(0, Math.min(maxCount, fallback));
+      return Math.max(0, Math.min(maxCount, Math.round(numeric)));
+    }
+
+    function isGapSelectionActive(lineIndex, position) {
+      return state.gap.lineBlanks.some((item) =>
+        item.lineIndex === lineIndex && (item.picks || []).some((entry) => entry.position === position)
+      );
+    }
+
+    function syncGapSelections(selections) {
+      const normalizedSelections = [...selections].sort((a, b) => (a.lineIndex - b.lineIndex) || (a.position - b.position));
+      state.gap.lineBlanks = groupGapSelections(normalizedSelections);
+      state.gap.selectedWords = normalizedSelections.map((entry) => entry.word);
+      state.gap.totalBlanks = normalizedSelections.length;
+    }
+
+    function toggleGapSelection(lineIndex, position) {
+      const allEntries = getAllGapEntries(state.gap.input);
+      const target = allEntries.find((entry) => entry.lineIndex === lineIndex && entry.position === position);
+      if (!target) return;
+
+      const currentSelections = flattenGapSelections(state.gap.lineBlanks);
+      const targetKey = `${lineIndex}:${position}`;
+      const hasTarget = currentSelections.some((entry) => `${entry.lineIndex}:${entry.position}` === targetKey);
+      const nextSelections = hasTarget
+        ? currentSelections.filter((entry) => `${entry.lineIndex}:${entry.position}` !== targetKey)
+        : [...currentSelections, target];
+
+      syncGapSelections(nextSelections);
+    }
+
+    function uniqueWords(text) {
+      const seen = new Set();
+      const out = [];
+      tokenizeWords(text).forEach(word => {
+        const key = normalizeWord(word);
+        if (!seen.has(key)) {
+          seen.add(key);
+          out.push(word);
+        }
+      });
+      return out;
+    }
+
+    function shuffle(array) {
+      const arr = [...array];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function scrambleSentence() {
+      const raw = state.scramble.input.replace(/\r?\n/g, '\n');
+      if (!raw.trim()) {
+        state.scramble.output = '';
+        render();
+        return;
+      }
+
+      const lines = raw.split('\n');
+      const scrambledLines = lines.map((line) => {
+        const trimmed = line.trim();
+        if (!trimmed) return '';
+
+        let current = trimmed;
+        if (state.scramble.lowercase) current = current.toLowerCase();
+        if (state.scramble.removePeriod) current = current.replace(/[.?!]+$/g, '');
+
+        const words = current.split(/\s+/).filter(Boolean);
+        return words.length ? `[ ${shuffle(words).join(' / ')} ]` : '';
+      });
+
+      state.scramble.output = scrambledLines.join('\n');
+      render();
+    }
+
+    function makeBlankToken(original) {
+      const stripped = original;
+      if (state.gap.firstLetterHint) {
+        const first = stripped[0] || '';
+        const len = state.gap.keepOriginalBlankLength ? Math.max(stripped.length - 1, 1) : 4;
+        return first + '_'.repeat(len);
+      }
+      const len = state.gap.keepOriginalBlankLength ? Math.max(stripped.length, 3) : 5;
+      return '_'.repeat(len);
+    }
+
+    function generateGapRandomSelections() {
+      const allEntries = getAllGapEntries(state.gap.input);
+      const maxCount = allEntries.length;
+
+      if (!allEntries.length) {
+        state.gap.lineBlanks = [];
+        state.gap.selectedWords = [];
+        state.gap.totalBlanks = 0;
+        return;
+      }
+
+      state.gap.totalBlanks = sanitizeGapTotalBlanks(state.gap.totalBlanks, maxCount, 0);
+      const chosen = shuffle(allEntries).slice(0, Math.min(state.gap.totalBlanks, allEntries.length));
+      chosen.sort((a, b) => (a.lineIndex - b.lineIndex) || (a.position - b.position));
+      state.gap.lineBlanks = groupGapSelections(chosen);
+      state.gap.selectedWords = chosen.map((entry) => entry.word);
+    }
+
+    function ensureGapRandomSelections() {
+      const allEntries = getAllGapEntries(state.gap.input);
+      const maxCount = allEntries.length;
+      const desiredCount = sanitizeGapTotalBlanks(state.gap.totalBlanks, maxCount, 0);
+      state.gap.totalBlanks = desiredCount;
+
+      if (!allEntries.length) {
+        state.gap.lineBlanks = [];
+        state.gap.selectedWords = [];
+        state.gap.totalBlanks = 0;
+        return;
+      }
+
+      const entryMap = new Map(allEntries.map((entry) => [`${entry.lineIndex}:${entry.position}`, entry.word]));
+      const currentSelections = flattenGapSelections(state.gap.lineBlanks);
+      const normalizedSelections = [];
+      let isValid = currentSelections.length === desiredCount;
+
+      currentSelections.forEach((entry) => {
+        const key = `${entry.lineIndex}:${entry.position}`;
+        if (!entryMap.has(key)) {
+          isValid = false;
+          return;
+        }
+        normalizedSelections.push({
+          lineIndex: entry.lineIndex,
+          position: entry.position,
+          word: entryMap.get(key)
+        });
+      });
+
+      const uniqueKeys = new Set(normalizedSelections.map((entry) => `${entry.lineIndex}:${entry.position}`));
+      if (uniqueKeys.size !== normalizedSelections.length) isValid = false;
+
+      if (!isValid) {
+        generateGapRandomSelections();
+        return;
+      }
+
+      normalizedSelections.sort((a, b) => (a.lineIndex - b.lineIndex) || (a.position - b.position));
+      state.gap.lineBlanks = groupGapSelections(normalizedSelections);
+      state.gap.selectedWords = normalizedSelections.map((entry) => entry.word);
+    }
+
+    function buildGapLineContent(line, lineIndex, targetEntries) {
+      const regex = /[A-Za-zÀ-ÿ0-9]+(?:['’-][A-Za-zÀ-ÿ0-9]+)*|[가-힣]+/g;
+      const targetPositions = new Set((targetEntries || []).map((entry) => entry.position));
+      let lastIndex = 0;
+      let cursor = 0;
+      let problemLine = '';
+      let selectionHtmlLine = '';
+      let answerHtmlLine = '';
+      let answerCopyHtmlLine = '';
+      let answerCopyRtfLine = '';
+      const answers = [];
+
+      for (const match of line.matchAll(regex)) {
+        const word = match[0];
+        const start = match.index;
+        const end = start + word.length;
+        const plainChunk = line.slice(lastIndex, start);
+        const safeChunk = escapeHtml(plainChunk);
+        problemLine += plainChunk;
+        selectionHtmlLine += safeChunk;
+        answerHtmlLine += safeChunk;
+        answerCopyHtmlLine += wrapCopyHtmlSegment(plainChunk);
+        answerCopyRtfLine += escapeRtfText(plainChunk);
+
+        const isSelected = targetPositions.has(cursor);
+        const safeWord = escapeHtml(word);
+        const toggleClass = isSelected ? 'word-toggle picked' : 'word-toggle';
+        const toggleMarkup = `<span class="${toggleClass}" data-gap-word="1" data-line-index="${lineIndex}" data-position="${cursor}" tabindex="0">${safeWord}</span>`;
+
+        if (isSelected) {
+          problemLine += makeBlankToken(word);
+          selectionHtmlLine += toggleMarkup;
+          answerHtmlLine += `<span class="answer-word">${safeWord}</span>`;
+          answerCopyHtmlLine += wrapCopyHtmlSegment(word, true);
+          answerCopyRtfLine += `\\ul ${escapeRtfText(word)}\\ul0 `; // v17: fix JS syntax error from unescaped backslashes
+          answers.push(word);
+        } else {
+          problemLine += word;
+          selectionHtmlLine += toggleMarkup;
+          answerHtmlLine += safeWord;
+          answerCopyHtmlLine += wrapCopyHtmlSegment(word);
+          answerCopyRtfLine += escapeRtfText(word);
+        }
+
+        lastIndex = end;
+        cursor += 1;
+      }
+
+      const tail = line.slice(lastIndex);
+      problemLine += tail;
+      selectionHtmlLine += escapeHtml(tail);
+      answerHtmlLine += escapeHtml(tail);
+      answerCopyHtmlLine += wrapCopyHtmlSegment(tail);
+      answerCopyRtfLine += escapeRtfText(tail);
+
+      return {
+        problemLine,
+        selectionHtmlLine,
+        answerHtmlLine,
+        answerCopyHtmlLine,
+        answerCopyRtfLine,
+        answers
+      };
+    }
+
+    function buildGapProblem() {
+      if (!state.gap.input.trim()) {
+        return {
+          problem: '',
+          answers: [],
+          selectionHtml: '',
+          answerHtml: '',
+          answerCopyHtml: '',
+          answerCopyText: '',
+          answerCopyRtf: ''
+        };
+      }
+
+      ensureGapRandomSelections();
+
+      const blankMap = new Map(state.gap.lineBlanks.map((item) => [item.lineIndex, item.picks]));
+      const answers = [];
+      const problemLines = [];
+      const selectionHtmlLines = [];
+      const answerHtmlLines = [];
+      const answerCopyHtmlLines = [];
+      const answerCopyRtfLines = [];
+      const lines = state.gap.input.replace(/\r?\n/g, '\n').split('\n');
+
+      lines.forEach((line, lineIndex) => {
+        const builtLine = buildGapLineContent(line, lineIndex, blankMap.get(lineIndex) || []);
+        problemLines.push(builtLine.problemLine);
+        selectionHtmlLines.push(builtLine.selectionHtmlLine);
+        answerHtmlLines.push(builtLine.answerHtmlLine);
+        answerCopyHtmlLines.push(builtLine.answerCopyHtmlLine);
+        answerCopyRtfLines.push(builtLine.answerCopyRtfLine);
+        answers.push(...builtLine.answers);
+      });
+
+      const selectionHtml = selectionHtmlLines.join('<br>');
+      const answerHtml = answerHtmlLines.join('<br>');
+      const answerCopyHtml = `<div style="line-height: 1.9; font-size: 10pt; white-space: normal;">${answerCopyHtmlLines.join('<br>')}</div>`;
+      const answerCopyRtf = buildRtfDocument(answerCopyRtfLines);
+
+      return {
+        problem: problemLines.join('\n'),
+        answers,
+        selectionHtml,
+        answerHtml,
+        answerCopyHtml,
+        answerCopyText: state.gap.input,
+        answerCopyRtf
+      };
+    }
+
+    function toSignedRtfCodeUnit(codeUnit) {
+      return codeUnit > 32767 ? codeUnit - 65536 : codeUnit;
+    }
+
+    function escapeRtfText(text) {
+      let output = '';
+      for (let i = 0; i < text.length; i += 1) {
+        const codeUnit = text.charCodeAt(i);
+        const char = text[i];
+        if (char === '\\' || char === '{' || char === '}') {
+          output += `\\${char}`;
+          continue;
+        }
+        if (char === '\n') {
+          output += '\\line ';
+          continue;
+        }
+        if (codeUnit >= 32 && codeUnit <= 126) {
+          output += char;
+          continue;
+        }
+        output += `\\u${toSignedRtfCodeUnit(codeUnit)}?`;
+      }
+      return output;
+    }
+
+    function buildRtfDocument(lines) {
+      return `{\\rtf1\\ansi\\deff0{\\fonttbl{\\f0 Arial;}}\\viewkind4\\uc1\\pard\\f0\\fs20 ${lines.join('\\line ')}}`;
+    }
+
+    function legacyCopy(text, html = '', rtf = '') {
+      let copied = false;
+      const onCopy = (event) => {
+        event.preventDefault();
+        event.clipboardData.setData('text/plain', text);
+        if (html) event.clipboardData.setData('text/html', html);
+        if (rtf) event.clipboardData.setData('text/rtf', rtf);
+        copied = true;
+      };
+
+      document.addEventListener('copy', onCopy);
+      try {
+        document.execCommand('copy');
+      } finally {
+        document.removeEventListener('copy', onCopy);
+      }
+      return copied;
+    }
+
+    function copyText(text, okMessage = '복사되었습니다.') {
+      if (!text) {
+        alert('복사할 내용이 없습니다.');
+        return;
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text)
+          .then(() => alert(okMessage))
+          .catch(() => {
+            if (legacyCopy(text)) alert(okMessage);
+            else alert('복사에 실패했습니다.');
+          });
+        return;
+      }
+      if (legacyCopy(text)) alert(okMessage);
+      else alert('복사에 실패했습니다.');
+    }
+
+    async function copyRichContent(html, text, rtf = '', okMessage = '복사되었습니다.') {
+      if (!text) {
+        alert('복사할 내용이 없습니다.');
+        return;
+      }
+      if (navigator.clipboard && window.ClipboardItem) {
+        try {
+          const payload = {
+            'text/plain': new Blob([text], { type: 'text/plain' }),
+            'text/html': new Blob([html], { type: 'text/html' })
+          };
+          if (rtf) payload['text/rtf'] = new Blob([rtf], { type: 'text/rtf' });
+          const item = new ClipboardItem(payload);
+          await navigator.clipboard.write([item]);
+          alert(okMessage);
+          return;
+        } catch (error) {
+        }
+      }
+      if (legacyCopy(text, html, rtf)) {
+        alert(okMessage);
+        return;
+      }
+      copyText(text, okMessage);
+    }
+
+    async function copyAnswerContent(html, text, rtf = '', okMessage = '복사되었습니다.') {
+      if (!text) {
+        alert('복사할 내용이 없습니다.');
+        return;
+      }
+      if (navigator.clipboard && window.ClipboardItem) {
+        try {
+          const payload = {
+            'text/plain': new Blob([text], { type: 'text/plain' })
+          };
+          if (html) payload['text/html'] = new Blob([html], { type: 'text/html' });
+          if (rtf) payload['text/rtf'] = new Blob([rtf], { type: 'text/rtf' });
+          const item = new ClipboardItem(payload);
+          await navigator.clipboard.write([item]);
+          alert(okMessage);
+          return;
+        } catch (error) {
+        }
+      }
+      if (legacyCopy(text, html, rtf)) {
+        alert(okMessage);
+        return;
+      }
+      copyText(text, okMessage);
+    }
+
+    function renderScramble() {
+      pageTitle.textContent = '문장 스크램블';
+      app.innerHTML = `
+        <div class="scramble-layout">
+          <section class="panel">
+            <div class="panel-head">
+              <div class="panel-title"></div>
+              <div class="head-tools">
+                <button type="button" id="scrambleExampleBtn">예시</button>
+                <button type="button" id="copyScrambleInputBtn" title="입력 복사">${iconCopy()}</button>
+                <button type="button" id="clearScrambleInputBtn" title="입력 지우기">${iconClose()}</button>
+              </div>
+            </div>
+            <textarea class="editor" id="scrambleInput" spellcheck="false" placeholder="문장을 입력하세요...">${escapeHtml(state.scramble.input)}</textarea>
+          </section>
+
+          <div class="controls">
+            <div class="checks">
+              <label><input type="checkbox" id="lowercaseCheck" ${state.scramble.lowercase ? 'checked' : ''}>전체 소문자</label>
+              <label><input type="checkbox" id="removePeriodCheck" ${state.scramble.removePeriod ? 'checked' : ''}>마침표 제거</label>
+            </div>
+            <button class="action-btn primary" id="scrambleActionBtn">스크램블</button>
+            <button class="action-btn" id="copyResultBtn">결과 복사</button>
+            <button class="action-btn" id="clearScrambleAllBtn">전체 지우기</button>
+          </div>
+
+          <section class="panel">
+            <div class="panel-head">
+              <div class="panel-title"></div>
+              <div class="head-tools">
+                <button type="button" id="copyScrambleOutputBtn" title="결과 복사">${iconCopy()}</button>
+                <button type="button" id="clearScrambleOutputBtn" title="결과 지우기">${iconClose()}</button>
+              </div>
+            </div>
+            <div class="panel-body mono" id="scrambleOutput">${escapeHtml(state.scramble.output)}</div>
+          </section>
+        </div>
+      `;
+
+      document.getElementById('scrambleInput').addEventListener('input', (e) => {
+        state.scramble.input = e.target.value;
+      });
+      document.getElementById('scrambleExampleBtn').addEventListener('click', () => {
+        state.scramble.input = exampleSentence;
+        scrambleSentence();
+      });
+      document.getElementById('copyScrambleInputBtn').addEventListener('click', () => copyText(state.scramble.input));
+      document.getElementById('clearScrambleInputBtn').addEventListener('click', () => {
+        state.scramble.input = '';
+        render();
+      });
+      document.getElementById('lowercaseCheck').addEventListener('change', (e) => {
+        state.scramble.lowercase = e.target.checked;
+      });
+      document.getElementById('removePeriodCheck').addEventListener('change', (e) => {
+        state.scramble.removePeriod = e.target.checked;
+      });
+      document.getElementById('scrambleActionBtn').addEventListener('click', scrambleSentence);
+      document.getElementById('copyResultBtn').addEventListener('click', () => copyText(state.scramble.output));
+      document.getElementById('clearScrambleAllBtn').addEventListener('click', () => {
+        state.scramble.input = '';
+        state.scramble.output = '';
+        render();
+      });
+      document.getElementById('copyScrambleOutputBtn').addEventListener('click', () => copyText(state.scramble.output));
+      document.getElementById('clearScrambleOutputBtn').addEventListener('click', () => {
+        state.scramble.output = '';
+        render();
+      });
+    }
+
+    function renderGap() {
+      pageTitle.textContent = '지문 빈칸 뚫기';
+      const built = buildGapProblem();
+      const totalWordCount = getAllGapEntries(state.gap.input).length;
+      const selectionCount = built.answers.length;
+
+      app.innerHTML = `
+        <div class="gap-layout">
+          <section class="panel">
+            <div class="panel-head">
+              <div class="panel-title">지문</div>
+              <div class="head-tools">
+                <button type="button" id="gapExampleBtn">예시</button>
+                <button type="button" id="clearGapInputBtn" title="지문 지우기">${iconClose()}</button>
+                <button type="button" id="copyGapInputBtn" title="지문 복사">${iconCopy()}</button>
+              </div>
+            </div>
+            <textarea class="editor compact" id="gapInput" spellcheck="false" placeholder="지문을 입력하세요...">${escapeHtml(state.gap.input)}</textarea>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head plain">
+              <div class="panel-title">문제</div>
+              <div class="head-tools settings-wrap">
+                <label class="inline-check"><input type="checkbox" id="firstLetterHintCheck" ${state.gap.firstLetterHint ? 'checked' : ''}>첫 글자 힌트</label>
+                <button type="button" id="gapSettingsBtn" title="설정">${iconGear()}</button>
+                <button type="button" id="copyProblemBtn" title="문제 복사">${iconCopy()}</button>
+                <div class="settings-pop" id="gapSettingsPop">
+                  <div class="setting-row">
+                    <span>빈칸 길이 원문 반영</span>
+                    <label><input type="checkbox" id="keepBlankLengthCheck" ${state.gap.keepOriginalBlankLength ? 'checked' : ''}></label>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="panel-body compact mono" id="gapProblem">${escapeHtml(built.problem || '지문을 먼저 입력 해주세요...')}</div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <div class="panel-title">빈칸 선택</div>
+              <div class="head-tools">
+                ${state.gap.input.trim() ? `<span class="status-chip">총 ${selectionCount}개</span>` : ''}
+                <button type="button" id="rerollGapBtn" title="다시 랜덤">다시 랜덤</button>
+              </div>
+            </div>
+            <div class="panel-body ui-body">
+              ${state.gap.input.trim() ? `
+                <div class="gap-config">
+                  <span class="mini-label">총 빈칸</span>
+                  <input class="mini-input" id="totalBlanksInput" type="number" min="0" max="${Math.max(0, totalWordCount)}" value="${state.gap.totalBlanks}">
+                  <span class="mini-label">개</span>
+                  <button class="mini-btn" id="rerollGapBtnBody" type="button">랜덤 다시 뽑기</button>
+                </div>
+                <div class="helper-note">전체 지문에서 지정한 총 개수만큼 랜덤으로 빈칸을 뽑습니다. 아래 단어를 누르면 빈칸/일반 단어로 바로 전환됩니다.</div>
+                <div class="inline-preview mono" id="gapSelectionPreview">${built.selectionHtml}</div>
+              ` : '지문을 먼저 입력 해주세요...'}
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head plain">
+              <div class="panel-title">답안</div>
+              <div class="head-tools">
+                <button type="button" id="toggleAnswersBtn">${state.gap.showAnswers ? '답안 숨기기' : '답안 보기'}</button>
+                <button type="button" id="copyAnswersBtn" title="답안 복사">${iconCopy()}</button>
+              </div>
+            </div>
+            <div class="panel-body compact ${state.gap.showAnswers ? '' : 'answers-hidden'}" id="gapAnswers">${state.gap.showAnswers ? `<div class="inline-preview" id="gapAnswerPreview">${built.answerHtml}</div>` : '답안 보기 버튼을 누르면 표시됩니다.'}</div>
+          </section>
+        </div>
+      `;
+
+      document.getElementById('gapInput').addEventListener('input', (e) => {
+        state.gap.input = e.target.value;
+        generateGapRandomSelections();
+        render();
+      });
+      document.getElementById('gapExampleBtn').addEventListener('click', () => {
+        state.gap.input = examplePassage;
+        state.gap.firstLetterHint = false;
+        state.gap.showAnswers = false;
+        state.gap.totalBlanks = 4;
+        generateGapRandomSelections();
+        render();
+      });
+      document.getElementById('clearGapInputBtn').addEventListener('click', () => {
+        state.gap.input = '';
+        state.gap.selectedWords = [];
+        state.gap.lineBlanks = [];
+        state.gap.showAnswers = false;
+        render();
+      });
+      document.getElementById('copyGapInputBtn').addEventListener('click', () => copyText(state.gap.input));
+      document.getElementById('copyProblemBtn').addEventListener('click', () => copyText(built.problem));
+      document.getElementById('copyAnswersBtn').addEventListener('click', () => copyAnswerContent(built.answerCopyHtml, built.answerCopyText, built.answerCopyRtf));
+      document.getElementById('toggleAnswersBtn').addEventListener('click', () => {
+        state.gap.showAnswers = !state.gap.showAnswers;
+        render();
+      });
+      document.getElementById('firstLetterHintCheck').addEventListener('change', (e) => {
+        state.gap.firstLetterHint = e.target.checked;
+        render();
+      });
+      document.getElementById('gapSettingsBtn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        document.getElementById('gapSettingsPop').classList.toggle('open');
+      });
+      const keepBlankLengthCheck = document.getElementById('keepBlankLengthCheck');
+      if (keepBlankLengthCheck) {
+        keepBlankLengthCheck.addEventListener('change', (e) => {
+          state.gap.keepOriginalBlankLength = e.target.checked;
+          render();
+        });
+      }
+      const totalBlanksInput = document.getElementById('totalBlanksInput');
+      if (totalBlanksInput) {
+        totalBlanksInput.addEventListener('change', (e) => {
+          const nextValue = sanitizeGapTotalBlanks(e.target.value, totalWordCount, state.gap.totalBlanks);
+          state.gap.totalBlanks = nextValue;
+          generateGapRandomSelections();
+          render();
+        });
+      }
+
+      const gapSelectionPreview = document.getElementById('gapSelectionPreview');
+      if (gapSelectionPreview) {
+        gapSelectionPreview.addEventListener('click', (e) => {
+          const target = e.target.closest('[data-gap-word]');
+          if (!target) return;
+          toggleGapSelection(Number(target.dataset.lineIndex), Number(target.dataset.position));
+          render();
+        });
+
+        gapSelectionPreview.addEventListener('keydown', (e) => {
+          if (e.key !== 'Enter' && e.key !== ' ') return;
+          const target = e.target.closest('[data-gap-word]');
+          if (!target) return;
+          e.preventDefault();
+          toggleGapSelection(Number(target.dataset.lineIndex), Number(target.dataset.position));
+          render();
+        });
+      }
+
+      ['rerollGapBtn', 'rerollGapBtnBody'].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.addEventListener('click', () => {
+            generateGapRandomSelections();
+            render();
+          });
+        }
+      });
+    }
+
+    function render() {
+      updateTheme();
+      closeMenus();
+      if (state.mode === 'gap') renderGap();
+      else renderScramble();
+    }
+
+    document.addEventListener('click', (e) => {
+      if (!moreMenu.contains(e.target) && !moreBtn.contains(e.target)) {
+        moreMenu.classList.remove('open');
+        moreBtn.classList.remove('active');
+      }
+      const settings = document.getElementById('gapSettingsPop');
+      const settingsBtn = document.getElementById('gapSettingsBtn');
+      if (settings && settingsBtn && !settings.contains(e.target) && !settingsBtn.contains(e.target)) {
+        settings.classList.remove('open');
+      }
+    });
+
+    themeBtn.addEventListener('click', () => {
+      state.dark = !state.dark;
+      render();
+    });
+
+    moreBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const opening = !moreMenu.classList.contains('open');
+      closeMenus();
+      if (opening) {
+        moreMenu.classList.add('open');
+        moreBtn.classList.add('active');
+      }
+    });
+
+    moreMenu.querySelectorAll('[data-mode]').forEach(button => {
+      button.addEventListener('click', () => {
+        state.mode = button.dataset.mode;
+        render();
+      });
+    });
+
+    parseUrl();
+    render();
+  </script>
+</body>
+</html>
